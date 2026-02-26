@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>MEDVERSE AI | Precision Diagnostics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #007aff;
+        --accent: #5efce8;
+        --bg-dark: #020617;
+        --card-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-color: var(--bg-dark);
+        color: #f8fafc;
+        min-height: 100vh;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Animated Liquid-Mesh Background */
+      .bg-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background: radial-gradient(
+          circle at 50% 50%,
+          #0f172a 0%,
+          #020617 100%
+        );
+        overflow: hidden;
+      }
+
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.15;
+        transition: transform 0.2s ease-out;
+      }
+
+      .blob-1 {
+        width: 500px;
+        height: 500px;
+        background: var(--primary);
+        top: -10%;
+        left: -10%;
+        animation: float 20s infinite alternate;
+      }
+      .blob-2 {
+        width: 400px;
+        height: 400px;
+        background: #7c3aed;
+        bottom: 10%;
+        right: -5%;
+        animation: float 15s infinite alternate-reverse;
+      }
+
+      @keyframes float {
+        from {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        to {
+          transform: translate(100px, 50px) rotate(30deg);
+        }
+      }
+
+      /* Navigation */
+      nav {
+        padding: 20px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      .logo {
+        font-weight: 700;
+        font-size: 1.4rem;
+        letter-spacing: -1px;
+      }
+
+      /* Dashboard Layout */
+      .container {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 24px;
+      }
+
+      .glass-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 28px;
+        padding: 32px;
+        position: relative;
+      }
+
+      /* Scan Viewer with Loading Interface */
+      .scan-viewport {
+        width: 100%;
+        height: 320px;
+        background: #000;
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid var(--glass-border);
+      }
+
+      .scanning-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          rgba(0, 122, 255, 0.1),
+          transparent
+        );
+        border-top: 2px solid var(--primary);
+        box-shadow: 0 -10px 20px -5px var(--primary);
+        z-index: 5;
+        display: none;
+        animation: scan-move 2.5s ease-in-out infinite;
+      }
+
+      @keyframes scan-move {
+        0% {
+          transform: translateY(-100%);
+        }
+        100% {
+          transform: translateY(320px);
+        }
+      }
+
+      .loading-ui {
+        position: absolute;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.8);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        backdrop-filter: blur(4px);
+      }
+
+      .pulse-loader {
+        width: 60px;
+        height: 60px;
+        border: 3px solid var(--glass-border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Touch Responsive Icons */
+      .touch-icon {
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .touch-icon:active {
+        transform: scale(0.9);
+        background: var(--primary);
+      }
+
+      .drop-zone {
+        border: 2px dashed var(--glass-border);
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        transition: 0.3s;
+        margin-top: 20px;
+      }
+
+      .drop-zone:hover {
+        border-color: var(--primary);
+        background: rgba(0, 122, 255, 0.03);
+      }
+
+      .btn-action {
+        background: var(--primary);
+        color: white;
+        border: none;
+        width: 100%;
+        padding: 16px;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: 0.3s;
+        margin-top: 20px;
+      }
+
+      .btn-action:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+      }
+
+      @media (max-width: 900px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body onmousemove="handleBackground(event)" ontouchmove="handleTouch(event)">
+    <div class="bg-canvas">
+      <div class="blob blob-1" id="blob1"></div>
+      <div class="blob blob-2" id="blob2"></div>
+    </div>
+
+    <nav>
+      <div class="logo">MEDVERSE AI</div>
+      <div class="touch-icon">
+        <svg
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"
+          />
+        </svg>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="glass-card">
+        <h2 style="margin: 0 0 24px 0; font-weight: 700">MRI Processor</h2>
+
+        <div class="scan-viewport" id="viewport">
+          <div class="scanning-overlay" id="scanner"></div>
+          <div class="loading-ui" id="loader">
+            <div class="pulse-loader"></div>
+            <div
+              style="
+                font-size: 0.8rem;
+                letter-spacing: 2px;
+                color: var(--primary);
+              "
+            >
+              PROCESSING VOXELS
+            </div>
+          </div>
+          <img
+            id="preview"
+            style="width: 100%; height: 100%; object-fit: cover; display: none"
+          />
+          <div
+            id="placeholder"
+            style="
+              display: flex;
+              height: 100%;
+              align-items: center;
+              justify-content: center;
+              color: #475569;
+              font-size: 0.9rem;
+            "
+          >
+            Ready for Input Sequence
+          </div>
+        </div>
+
+        <form
+          method="POST"
+          enctype="multipart/form-data"
+          onsubmit="startAnalysis()"
+        >
+          <input
+            type="file"
+            name="mri"
+            id="fileInput"
+            accept="image/*"
+            required
+            hidden
+            onchange="handlePreview(event)"
+          />
+          <div
+            class="drop-zone"
+            onclick="document.getElementById('fileInput').click()"
+          >
+            <p style="margin: 0; font-size: 0.9rem; color: #94a3b8">
+              Tap to upload MRI scan
+            </p>
+          </div>
+          <button type="submit" class="btn-action">Initiate Neural Scan</button>
+        </form>
+      </div>
+
+      <div class="glass-card">
+        <h2 style="margin: 0 0 24px 0">Diagnostic Intel</h2>
+        {% if result %}
+        <div
+          style="
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+          "
+        >
+          Analysis Result
+        </div>
+        <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 24px">
+          {{ result }}
+        </div>
+
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px">
+          Probability
+        </div>
+        <div
+          style="
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 32px;
+            color: var(--primary);
+          "
+        >
+          {{ confidence }}%
+        </div>
+
+        <div
+          style="
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+          "
+        >
+          <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 8px">
+            CLINICAL RECOMMENDATION
+          </div>
+          <p style="margin: 0; font-size: 0.95rem; line-height: 1.5">
+            {{ suggestion }}
+          </p>
+        </div>
+        {% else %}
+        <div style="text-align: center; margin-top: 100px; color: #475569">
+          Awaiting active scan data...
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <script>
+      // Background Motion Controller
+      function handleBackground(e) {
+        const x = (e.clientX / window.innerWidth - 0.5) * 40;
+        const y = (e.clientY / window.innerHeight - 0.5) * 40;
+        document.getElementById("blob1").style.transform =
+          `translate(${x}px, ${y}px)`;
+        document.getElementById("blob2").style.transform =
+          `translate(${-x}px, ${-y}px)`;
+      }
+
+      function handleTouch(e) {
+        const touch = e.touches[0];
+        handleBackground({ clientX: touch.clientX, clientY: touch.clientY });
+      }
+
+      function handlePreview(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function () {
+          const img = document.getElementById("preview");
+          img.src = reader.result;
+          img.style.display = "block";
+          document.getElementById("placeholder").style.display = "none";
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function startAnalysis() {
+        document.getElementById("loader").style.display = "flex";
+        document.getElementById("scanner").style.display = "block";
+      }
+    </script>
+  </body>
+</html>
