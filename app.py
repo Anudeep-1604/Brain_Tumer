@@ -1,10 +1,9 @@
-from flask import Flask, render_template, request
+import streamlit as st
 import pickle
 import cv2
 import numpy as np
-import os
-
-app = Flask(__name__)
+from PIL import Image
+import tempfile
 
 # Load model dictionary
 MODEL_PATH = "model/brain_tumor_model.pkl"
@@ -29,39 +28,32 @@ def predict_tumor(image_path):
     return prediction, round(confidence * 100, 2)
 
 
-@app.route("/", methods=["GET", "POST"])
-def index():
+# ---------------- STREAMLIT UI ---------------- #
 
-    result = None
-    suggestion = ""
-    confidence = None
+st.title("Brain Tumor Detection")
 
-    if request.method == "POST":
+st.write(f"**Model Accuracy:** {round(model_accuracy * 100, 2)}%")
 
-        file = request.files.get("mri")
+uploaded_file = st.file_uploader("Upload MRI Image", type=["jpg", "jpeg", "png"])
 
-        if not file or file.filename == "":
-            return render_template("index.html")
+if uploaded_file:
 
-        save_path = os.path.join("static", "uploaded.jpg")
-        file.save(save_path)
+    st.image(uploaded_file, caption="Uploaded MRI", use_container_width=True)
 
-        prediction, confidence = predict_tumor(save_path)
+    # Save image temporarily (same as Flask saving)
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        tmp_file.write(uploaded_file.read())
+        temp_path = tmp_file.name
 
-        if prediction == 1:
-            result = "🧠 Brain Tumor Detected"
-            suggestion = "Consult a neurologist immediately."
-        else:
-            result = "✅ No Tumor Detected"
-            suggestion = "Maintain regular health checkups."
+    prediction, confidence = predict_tumor(temp_path)
 
-    return render_template(
-        "index.html",
-        result=result,
-        suggestion=suggestion,
-        confidence=confidence,
-        model_accuracy=round(model_accuracy * 100, 2)
-    )
+    if prediction == 1:
+        result = "🧠 Brain Tumor Detected"
+        suggestion = "Consult a neurologist immediately."
+    else:
+        result = "✅ No Tumor Detected"
+        suggestion = "Maintain regular health checkups."
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    st.subheader(result)
+    st.write(f"**Confidence:** {confidence}%")
+    st.write(f"**Suggestion:** {suggestion}")
